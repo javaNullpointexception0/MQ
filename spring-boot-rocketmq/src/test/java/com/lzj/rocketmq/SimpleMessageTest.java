@@ -1,6 +1,5 @@
 package com.lzj.rocketmq;
 
-import com.lzj.rocketmq.config.RocketMqConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -15,9 +14,7 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
 
 import java.nio.charset.Charset;
 import java.util.List;
@@ -31,9 +28,6 @@ import java.util.List;
 @Slf4j
 public class SimpleMessageTest {
 
-    @Autowired
-    private RocketMqConfig rocketMqConfig;
-
     private static final String TOPIC = "topic_simple_message";
 
     /**
@@ -45,7 +39,7 @@ public class SimpleMessageTest {
      */
     @Test
     public void sendMessageSynchronously() throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
-        DefaultMQProducer defaultMQProducer = getDefaultMQProducer();
+        DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
         Message message = new Message(TOPIC, "send_message_synchronously", "同步消息".getBytes(Charset.forName("UTF-8")));
         SendResult sendResult = defaultMQProducer.send(message);
         log.info("同步消息，结果名称：{}，结果只：{}", sendResult.getSendStatus().name(),
@@ -61,7 +55,7 @@ public class SimpleMessageTest {
      */
     @Test
     public void sendMessageAsynchronously() throws RemotingException, MQClientException, InterruptedException {
-        DefaultMQProducer defaultMQProducer = getDefaultMQProducer();
+        DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
         Message message = new Message(TOPIC, "send_message_asynchronously", "异步消息".getBytes(Charset.forName("UTF-8")));
         defaultMQProducer.send(message, new SendCallback(){
 
@@ -87,7 +81,7 @@ public class SimpleMessageTest {
      */
     @Test
     public void sendMessageOneway() throws RemotingException, MQClientException, InterruptedException {
-        DefaultMQProducer defaultMQProducer = getDefaultMQProducer();
+        DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
         Message message = new Message(TOPIC, "send_message_oneway", "单向消息".getBytes(Charset.forName("UTF-8")));
         defaultMQProducer.sendOneway(message);
         defaultMQProducer.shutdown();
@@ -95,7 +89,7 @@ public class SimpleMessageTest {
 
     @Test
     public void consumeMessage() throws MQClientException {
-        DefaultMQPushConsumer defaultMQPushConsumer = getDefaultMQPushConsumer();
+        DefaultMQPushConsumer defaultMQPushConsumer = RocketMqUtil.getDefaultMQPushConsumer();
         defaultMQPushConsumer.subscribe(TOPIC, "*");
         defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
             @Override
@@ -109,21 +103,5 @@ public class SimpleMessageTest {
         });
     }
 
-    private DefaultMQProducer getDefaultMQProducer() throws MQClientException {
-        DefaultMQProducer defaultMQProducer = new DefaultMQProducer();
-        defaultMQProducer.setNamesrvAddr(rocketMqConfig.getNamesrvAddr());
-        //同步发送消息时发送失败后的重试次数
-        defaultMQProducer.setRetryTimesWhenSendFailed(0);
-        //异步发送消息时发送失败后的重试次数
-        defaultMQProducer.setRetryTimesWhenSendAsyncFailed(0);
-        defaultMQProducer.start();
-        return defaultMQProducer;
-    }
 
-    private DefaultMQPushConsumer getDefaultMQPushConsumer() throws MQClientException {
-        DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer();
-        defaultMQPushConsumer.setNamesrvAddr(rocketMqConfig.getNamesrvAddr());
-        defaultMQPushConsumer.start();
-        return defaultMQPushConsumer;
-    }
 }
