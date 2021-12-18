@@ -1,27 +1,19 @@
-package com.lzj.rocketmq;
+package com.lzj.rocketmq.utils;
 
 import com.lzj.rocketmq.config.RocketMqConfig;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-
-@Component
 public class RocketMqUtil {
 
-    private static RocketMqConfig rocketMqConfig;
-
-    @PostConstruct
-    public void init(RocketMqConfig rocketMqConfig) {
-        RocketMqUtil.rocketMqConfig = rocketMqConfig;
-    }
+    public static final String TOPIC = "topic_simple_message";
 
     public static DefaultMQProducer getDefaultMQProducer() {
         try {
             DefaultMQProducer defaultMQProducer = new DefaultMQProducer();
-            defaultMQProducer.setNamesrvAddr(rocketMqConfig.getNamesrvAddr());
+            defaultMQProducer.setProducerGroup("TEST_PRODUCER");
+            defaultMQProducer.setNamesrvAddr(SpringUtil.getBean(RocketMqConfig.class).getNamesrvAddr());
             //同步发送消息时发送失败后的重试次数
             defaultMQProducer.setRetryTimesWhenSendFailed(0);
             //异步发送消息时发送失败后的重试次数
@@ -37,8 +29,8 @@ public class RocketMqUtil {
     public static DefaultMQPushConsumer getDefaultMQPushConsumer() throws MQClientException {
         try {
             DefaultMQPushConsumer defaultMQPushConsumer = new DefaultMQPushConsumer();
-            defaultMQPushConsumer.setNamesrvAddr(rocketMqConfig.getNamesrvAddr());
-            defaultMQPushConsumer.start();
+            defaultMQPushConsumer.setConsumerGroup("TEST_CONSUMER");
+            defaultMQPushConsumer.setNamesrvAddr(SpringUtil.getBean(RocketMqConfig.class).getNamesrvAddr());
             return defaultMQPushConsumer;
         } catch (Exception e) {
             e.printStackTrace();

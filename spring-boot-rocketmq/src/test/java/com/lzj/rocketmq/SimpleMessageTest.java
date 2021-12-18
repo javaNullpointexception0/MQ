@@ -1,5 +1,6 @@
 package com.lzj.rocketmq;
 
+import com.lzj.rocketmq.utils.RocketMqUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -28,8 +29,6 @@ import java.util.List;
 @Slf4j
 public class SimpleMessageTest {
 
-    private static final String TOPIC = "topic_simple_message";
-
     /**
      * 发送同步消息
      * @throws InterruptedException
@@ -39,10 +38,11 @@ public class SimpleMessageTest {
      */
     @Test
     public void sendMessageSynchronously() throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+
         DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
-        Message message = new Message(TOPIC, "send_message_synchronously", "同步消息".getBytes(Charset.forName("UTF-8")));
+        Message message = new Message(RocketMqUtil.TOPIC, "send_message_synchronously", "同步消息".getBytes(Charset.forName("UTF-8")));
         SendResult sendResult = defaultMQProducer.send(message);
-        log.info("同步消息，结果名称：{}，结果只：{}", sendResult.getSendStatus().name(),
+        log.info("同步消息，结果名称：{}，结果值：{}", sendResult.getSendStatus().name(),
                 sendResult.getSendStatus().ordinal());
         defaultMQProducer.shutdown();
     }
@@ -56,7 +56,7 @@ public class SimpleMessageTest {
     @Test
     public void sendMessageAsynchronously() throws RemotingException, MQClientException, InterruptedException {
         DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
-        Message message = new Message(TOPIC, "send_message_asynchronously", "异步消息".getBytes(Charset.forName("UTF-8")));
+        Message message = new Message(RocketMqUtil.TOPIC, "send_message_asynchronously", "异步消息".getBytes(Charset.forName("UTF-8")));
         defaultMQProducer.send(message, new SendCallback(){
 
             @Override
@@ -74,7 +74,7 @@ public class SimpleMessageTest {
     }
 
     /**
-     * 单向传输，存在一定的不安全性，所以一般使用于记录日志的功能
+     * 单向传输，客户端只管发送，不等待响应，存在一定的不安全性，一般使用于记录日志的功能
      * @throws RemotingException
      * @throws MQClientException
      * @throws InterruptedException
@@ -82,15 +82,15 @@ public class SimpleMessageTest {
     @Test
     public void sendMessageOneway() throws RemotingException, MQClientException, InterruptedException {
         DefaultMQProducer defaultMQProducer = RocketMqUtil.getDefaultMQProducer();
-        Message message = new Message(TOPIC, "send_message_oneway", "单向消息".getBytes(Charset.forName("UTF-8")));
+        Message message = new Message(RocketMqUtil.TOPIC, "send_message_oneway", "单向消息".getBytes(Charset.forName("UTF-8")));
         defaultMQProducer.sendOneway(message);
         defaultMQProducer.shutdown();
     }
 
     @Test
-    public void consumeMessage() throws MQClientException {
+    public void consumeMessage() throws Exception {
         DefaultMQPushConsumer defaultMQPushConsumer = RocketMqUtil.getDefaultMQPushConsumer();
-        defaultMQPushConsumer.subscribe(TOPIC, "*");
+        defaultMQPushConsumer.subscribe(RocketMqUtil.TOPIC, "*");
         defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> list,
@@ -101,6 +101,8 @@ public class SimpleMessageTest {
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
+        defaultMQPushConsumer.start();
+        Thread.sleep(5000L);
     }
 
 
