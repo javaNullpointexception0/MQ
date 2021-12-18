@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,7 +33,7 @@ public class ScheduleMessageTest {
         Message message = new Message(RocketMqUtil.TOPIC, "schedule",
                 "schedule-message".getBytes(Charset.forName("UTF-8")));
         //设置延迟级别，延迟级别≠延迟时间
-        message.setDelayTimeLevel(4);
+        message.setDelayTimeLevel(5);
         SendResult sendResult = defaultMQProducer.send(message);
         log.info("发送消息结果：{}", sendResult.getSendStatus().name());
     }
@@ -44,16 +46,19 @@ public class ScheduleMessageTest {
         defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
             @Override
             public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 for (MessageExt messageExt : msgs) {
-                    log.info("消息延时时间：{}毫秒，消息内容：{}",
-                            System.currentTimeMillis() - messageExt.getBornTimestamp(),
+                    log.info("出生时间：{}，存储时间：{}，当前时间：{}，消息内容：{}",
+                            sdf.format(new Date(messageExt.getBornTimestamp())),
+                            sdf.format(new Date(messageExt.getStoreTimestamp())),
+                            sdf.format(new Date()),
                             new String(messageExt.getBody(), Charset.forName("UTF-8")));
                 }
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });
         defaultMQPushConsumer.start();
-        Thread.sleep(30000L);
+        Thread.sleep(60000L);
         defaultMQPushConsumer.shutdown();
     }
 }
