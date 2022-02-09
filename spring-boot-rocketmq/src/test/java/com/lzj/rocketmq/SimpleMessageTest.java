@@ -1,7 +1,10 @@
 package com.lzj.rocketmq;
 
+import com.lzj.rocketmq.config.RocketMqConfig;
 import com.lzj.rocketmq.utils.RocketMqUtil;
+import com.lzj.rocketmq.utils.SpringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.client.consumer.DefaultLitePullConsumer;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -102,6 +105,18 @@ public class SimpleMessageTest {
             }
         });
         defaultMQPushConsumer.start();
+        Thread.sleep(20000L);
+    }
+
+    @Test
+    public void consumeMessage2() throws Exception {
+        DefaultLitePullConsumer defaultLitePullConsumer = new DefaultLitePullConsumer("TEST_CONSUMER");
+        defaultLitePullConsumer.setNamesrvAddr(SpringUtil.getBean(RocketMqConfig.class).getNamesrvAddr());
+        defaultLitePullConsumer.subscribe(RocketMqUtil.TOPIC, "send_message_synchronously");
+        defaultLitePullConsumer.setAutoCommit(true);
+        defaultLitePullConsumer.start();
+        List<MessageExt> list = defaultLitePullConsumer.poll();
+        log.info("消费到消息条数：{}", list.size());
         Thread.sleep(5000L);
     }
 
