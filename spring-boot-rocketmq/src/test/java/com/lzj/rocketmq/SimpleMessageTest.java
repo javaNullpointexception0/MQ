@@ -32,6 +32,22 @@ import java.util.List;
 @Slf4j
 public class SimpleMessageTest {
 
+    @Test
+    public void test(){
+        int flag = 2;
+        switch (flag) {
+            case 0:
+                System.out.println(0);
+            case 1:
+                System.out.println(1);
+            case 2:
+                System.out.println(2);
+                default:
+                    System.out.println(-1);
+                    break;
+        }
+    }
+
     /**
      * 发送同步消息
      * @throws InterruptedException

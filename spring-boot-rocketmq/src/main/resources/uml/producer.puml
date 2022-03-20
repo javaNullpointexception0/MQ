@@ -1,0 +1,81 @@
+@startuml
+interface RemotingService{
+    void start();
+    void shutdown();
+    void registerRPCHook(RPCHook rpcHook);
+}
+interface RemotingClient{
+RemotingCommand invokeSync(...);
+void invokeAsync(...);
+void invokeOneway(...);
+}
+RemotingService <|-- RemotingClient
+abstract class NettyRemotingAbstract{
+void putNettyEvent(final NettyEvent event);
+void doBeforeRpcHooks(String addr, RemotingCommand request);
+void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response);
+void processRequestCommand(final ChannelHandlerContext ctx, final RemotingCommand cmd);
+void processResponseCommand(ChannelHandlerContext ctx, RemotingCommand cmd)
+}
+
+class NettyRemotingClient{
+Bootstrap bootstrap = new Bootstrap();
+}
+NettyRemotingAbstract <|-- NettyRemotingClient:继承
+RemotingClient <.. NettyRemotingClient:实现
+
+class MQClientAPIImpl
+NettyRemotingClient <-- MQClientAPIImpl:关联
+
+class MQClientInstance{
+ConcurrentMap<String/* group */, MQProducerInner> producerTable;
+ConcurrentMap<String/* group */, MQConsumerInner> consumerTable;
+ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable;
+PullMessageService pullMessageService;
+RebalanceService rebalanceService;
+ConsumerStatsManager consumerStatsManager;
+}
+MQClientAPIImpl <-- MQClientInstance:关联
+
+
+interface MQProducerInner{
+Set<String> getPublishTopicList();
+void updateTopicPublishInfo();
+}
+class DefaultMQProducerImpl{
+ConcurrentMap<String/* topic */, TopicPublishInfo> topicPublishInfoTable;
+MQFaultStrategy mqFaultStrategy = new MQFaultStrategy();
+}
+MQProducerInner <.. DefaultMQProducerImpl:实现
+MQClientInstance <-- DefaultMQProducerImpl:关联
+
+class ClientConfig{
+String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
+String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+String namespace;
+int heartbeatBrokerInterval = 1000 * 30;
+int mqClientApiTimeout = 3 * 1000;
+}
+interface MQAdmin{
+void createTopic(...)
+long searchOffset(...);
+long maxOffset(final MessageQueue mq);
+QueryResult queryMessage(...);
+}
+interface MQProducer{
+void start();
+void shutdown();
+List<MessageQueue> fetchPublishMessageQueues(...);
+SendResult send(...);
+Message request(...);
+}
+class DefaultMQProducer{
+}
+
+MQAdmin <|-- MQProducer:继承
+ClientConfig <|-- DefaultMQProducer:继承
+MQProducer <|.. DefaultMQProducer:实现
+DefaultMQProducerImpl <-- DefaultMQProducer:关联
+DefaultMQProducer <-- DefaultMQProducerImpl:关联
+
+@enduml

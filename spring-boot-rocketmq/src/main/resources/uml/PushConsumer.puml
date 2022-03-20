@@ -1,0 +1,110 @@
+@startuml
+
+interface MQAdmin{
+void createTopic(...)
+long searchOffset(...);
+long maxOffset(final MessageQueue mq);
+QueryResult queryMessage(...);
+}
+
+interface MQConsumer{
+void sendMessageBack(...);
+Set<MessageQueue> fetchSubscribeMessageQueues(final String topic);
+}
+
+interface MQPushConsumer{
+void start();
+void shutdown();
+void registerMessageListener(...);
+void subscribe(...);
+void unsubscribe(...);
+void suspend();
+void resume();
+}
+
+MQAdmin <|-- MQConsumer:继承
+MQConsumer <|-- MQPushConsumer:继承
+
+class ClientConfig{
+String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
+String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+String namespace;
+int heartbeatBrokerInterval = 1000 * 30;
+int mqClientApiTimeout = 3 * 1000;
+}
+
+class DefaultMQPushConsumer{
+AllocateMessageQueueStrategy allocateMessageQueueStrategy;
+Map<String /* topic */, String /* sub expression */> subscription = new HashMap<String, String>();
+MessageListener messageListener;
+DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
+}
+
+ClientConfig <|-- DefaultMQPushConsumer:继承
+MQPushConsumer <.. DefaultMQPushConsumer:实现
+
+
+class MQClientInstance{
+ConcurrentMap<String/* group */, MQConsumerInner> consumerTable;
+ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable;
+PullMessageService pullMessageService;
+RebalanceService rebalanceService;
+void doRebalance();
+}
+MQClientInstance <-- RebalancePushImpl:关联
+
+class MQClientAPIImpl{
+RemotingClient remotingClient = new NettyRemotingClient();
+}
+MQClientAPIImpl <-- MQClientInstance:关联
+
+class PullMessageService{
+void executePullRequestLater(...);
+void executePullRequestImmediately(...);
+void run();//触发拉取消息
+}
+PullMessageService <-- MQClientInstance:关联
+MQClientInstance <-- PullMessageService:关联
+
+class RebalanceService{
+void run();//触发消费均衡
+}
+RebalanceService <-- MQClientInstance:关联
+MQClientInstance <-- RebalanceService:关联
+
+abstract class RebalanceImpl{
+ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable;
+ConcurrentMap<String /* topic */, SubscriptionData> subscriptionInner;
+AllocateMessageQueueStrategy allocateMessageQueueStrategy;
+MQClientInstance mQClientFactory;
+void doRebalance(...);
+void rebalanceByTopic(...);
+}
+
+class RebalancePushImpl{
+long computePullFromWhereWithException(...);
+}
+RebalanceImpl <|-- RebalancePushImpl:继承
+
+
+interface MQConsumerInner{
+ConsumeFromWhere consumeFromWhere();
+void doRebalance();
+void updateTopicSubscribeInfo(...);
+}
+
+class DefaultMQPushConsumerImpl{
+MessageListener messageListener;
+PullAPIWrapper pullAPIWrapper;
+RebalanceImpl rebalanceImpl = new RebalancePushImpl(this);
+void pullMessage(...);//真正拉取消息逻辑
+}
+MQConsumerInner <.. DefaultMQPushConsumerImpl:实现
+
+RebalancePushImpl <-- DefaultMQPushConsumerImpl:关联
+DefaultMQPushConsumerImpl <-- RebalancePushImpl:关联
+DefaultMQPushConsumerImpl <-- DefaultMQPushConsumer:关联
+DefaultMQPushConsumer <-- DefaultMQPushConsumerImpl:关联
+MQClientInstance <-- DefaultMQPushConsumerImpl:关联
+
+@enduml

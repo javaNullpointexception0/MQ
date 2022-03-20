@@ -1,0 +1,50 @@
+@startuml
+
+class MappedFile
+class MappedFileQueue
+MappedFile <-- MappedFileQueue
+
+interface Runnable
+abstract class ServiceThread
+abstract class FlushCommitLogService
+Runnable <|.. ServiceThread: 实现
+ServiceThread <|-- FlushCommitLogService: 继承
+
+class CommitLog
+MappedFileQueue <-- CommitLog: 关联
+DefaultMessageStore <-- CommitLog: 关联
+FlushCommitLogService <-- CommitLog: 关联
+
+
+
+class CommitLog {
+MappedFileQueue mappedFileQueue;
+DefaultMessageStore defaultMessageStore;
+//默认为FlushDiskType.ASYNC_FLUSH -> FlushRealTimeService
+//FlushDiskType.SYNC_FLUSH -> GroupCommitService
+FlushCommitLogService flushCommitLogService;
+//new CommitRealTimeService();
+FlushCommitLogService commitLogService;
+PutMessageLock putMessageLock;
+}
+
+class HAService {
+HAClient haClient;
+List<HAConnection> connectionList;
+}
+
+class MessageStoreConfig
+interface MessageStore
+class DefaultMessageStore {
+MessageStoreConfig messageStoreConfig;
+HAService haService;
+}
+MessageStore <|.. DefaultMessageStore: 实现
+CommitLog <-- DefaultMessageStore: 关联
+MessageStoreConfig <-- DefaultMessageStore: 关联
+HAService <-- DefaultMessageStore: 关联
+
+
+
+
+@enduml

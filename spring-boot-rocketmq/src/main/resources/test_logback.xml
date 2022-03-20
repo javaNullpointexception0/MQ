@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration  scan="true" scanPeriod="10 seconds">
+    <!--
+    <appender name="mqAppender1" class="org.apache.rocketmq.logappender.logback.RocketmqLogbackAppender">
+        <tag>logappender</tag>
+        <topic>topic_logappender_message</topic>
+        <producerGroup>defaultGroup</producerGroup>
+        <nameServerAddress>192.168.6.130:9876;192.168.6.131:9876;192.168.6.132:9876</nameServerAddress>
+        <layout>
+            <pattern>%date %p %t - %m%n</pattern>
+        </layout>
+    </appender> -->
+</configuration>
